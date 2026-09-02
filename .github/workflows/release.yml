@@ -1,30 +1,24 @@
-name: Release Android Binaries
+name: Release Android ARMv7
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
-  build-android:
-    name: Build for Android (${{ matrix.target }})
+  build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target:
-          - aarch64-linux-android
-          - armv7-linux-androideabi
-          - i686-linux-android
-          - x86_64-linux-android
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
+          targets: armv7-linux-androideabi
 
       - name: Install Android NDK
         run: |
@@ -33,14 +27,9 @@ jobs:
           echo "ANDROID_NDK_HOME=$PWD/android-ndk-r26b" >> $GITHUB_ENV
 
       - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target armv7-linux-androideabi
 
-      - name: Upload binary to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/${{ matrix.target }}/release/hello
-          asset_name: hello-${{ matrix.target }}
-          asset_content_type: application/octet-stream
+          files: target/armv7-linux-androideabi/release/hello
